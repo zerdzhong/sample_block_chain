@@ -13,11 +13,12 @@ type Block struct {
 	Data      string
 	Hash      string
 	PrevHash  string
+	Nonce     int
 }
 
 func NewGenesisBlock() Block {
 	t := time.Now()
-	genesisBlock := Block{0, t.String(), "Genesis Block", "", ""}
+	genesisBlock := Block{0, t.String(), "Genesis Block", "", "", 0}
 	return genesisBlock
 }
 
@@ -30,7 +31,13 @@ func NewBlock(prevBlock Block, data string) Block {
 	newBlock.Index = prevBlock.Index + 1
 	newBlock.Timestamp = time.Now().String()
 	newBlock.PrevHash = prevBlock.Hash
-	newBlock.Hash = calculateHash(newBlock)
+	//newBlock.Hash = calculateHash(newBlock)
+
+	pow := NewProofOfWork(newBlock)
+	nonce, hash := pow.Run()
+
+	newBlock.Hash = string(hash)
+	newBlock.Nonce = nonce
 
 	return newBlock
 }

@@ -1,7 +1,5 @@
 package blockchain
 
-import "errors"
-
 type BlockChain struct {
 	blocks []Block
 }
@@ -14,14 +12,15 @@ func (bc *BlockChain) AddBlock(data string) error {
 	prevBlock := bc.blocks[len(bc.blocks)-1]
 	newBlock := NewBlock(prevBlock, data)
 
-	if isBlockValid(newBlock, bc.blocks[len(bc.blocks)-1]) {
-		newBlockchain := append(bc.blocks, newBlock)
-		bc.replaceChain(newBlockchain)
+	//if isBlockValid(newBlock, bc.blocks[len(bc.blocks)-1]) {
+	newBlockchain := append(bc.blocks, newBlock)
+	bc.blocks = newBlockchain
 
-		return nil
-	}
+	return nil
+}
 
-	return errors.New("Block not valid")
+func (bc *BlockChain) GetAllBlocks() []Block {
+	return bc.blocks
 }
 
 // make sure using longest chain
