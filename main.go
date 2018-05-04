@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	. "samplechain/cli"
+	. "samplechain/cmd"
 
 	"github.com/joho/godotenv"
 	"samplechain/networking"
