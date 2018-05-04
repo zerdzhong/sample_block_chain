@@ -7,7 +7,7 @@ import (
 	. "samplechain/blockchain"
 )
 
-var bcServer chan BlockChain
+var bcServer chan Blockchain
 
 func StartServer() {
 	server, err := net.Listen("tcp", ":"+os.Getenv("ADDR"))

@@ -1,16 +1,16 @@
 package blockchain
 
 import (
-	. "../utils"
 	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"math"
 	"math/big"
+	. "samplechain/utils"
 )
 
 //
-const targetBits = 24
+const targetBits = 8
 
 var (
 	maxNonce = math.MaxInt64
@@ -70,6 +70,7 @@ func (pow ProofOfWork) Run() (int, []byte) {
 
 	return nonce, hash[:]
 }
+
 func (pow ProofOfWork) Validate() bool {
 	var hashInt big.Int
 	data := pow.prepareData(pow.block.Nonce)

@@ -1,15 +1,12 @@
 package main
 
 import (
-	. "./blockchain"
 	"log"
+	. "samplechain/cli"
 
-	"fmt"
 	"github.com/joho/godotenv"
-	"strconv"
+	"samplechain/networking"
 )
-
-var blockChain BlockChain
 
 func main() {
 	err := godotenv.Load()
@@ -18,20 +15,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	blockChain = NewBlockChain()
-	blockChain.AddBlock("Send 1 BTC to Ivan")
-	blockChain.AddBlock("Send 2 more BTC to Ivan")
+	cmd := NewCMD()
 
-	for _, block := range blockChain.GetAllBlocks() {
+	defer cmd.Close()
+	cmd.Run()
 
-		fmt.Printf("Prev. hash: %x\n", block.PrevHash)
-		fmt.Printf("Data: %s\n", block.Data)
-		fmt.Printf("Hash: %x\n", block.Hash)
-
-		pow := NewProofOfWork(block)
-		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
-		fmt.Println()
-	}
-
-	//networking.StartServer()
+	networking.StartServer()
 }

@@ -1,8 +1,10 @@
 package blockchain
 
 import (
+	"bytes"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/gob"
+	"fmt"
 	"time"
 )
 
@@ -11,19 +13,20 @@ type Block struct {
 	Index     int
 	Timestamp string
 	Data      string
-	Hash      string
-	PrevHash  string
+	Hash      []byte
+	PrevHash  []byte
 	Nonce     int
 }
 
 func NewGenesisBlock() Block {
 	t := time.Now()
-	genesisBlock := Block{0, t.String(), "Genesis Block", "", "", 0}
+	genesisBlock := Block{0, t.String(), "Genesis Block", []byte{}, []byte{}, 0}
+	genesisBlock.Hash = calculateHash(genesisBlock)
 	return genesisBlock
 }
 
 // generate new block using previous block's hash
-func NewBlock(prevBlock Block, data string) Block {
+func NewBlock(prevBlock *Block, data string) *Block {
 	var newBlock Block
 
 	newBlock.Data = data
@@ -31,38 +34,46 @@ func NewBlock(prevBlock Block, data string) Block {
 	newBlock.Index = prevBlock.Index + 1
 	newBlock.Timestamp = time.Now().String()
 	newBlock.PrevHash = prevBlock.Hash
-	//newBlock.Hash = calculateHash(newBlock)
 
 	pow := NewProofOfWork(newBlock)
 	nonce, hash := pow.Run()
 
-	newBlock.Hash = string(hash)
+	newBlock.Hash = hash
 	newBlock.Nonce = nonce
 
-	return newBlock
+	return &newBlock
+}
+
+func (b *Block) Serialize() []byte {
+	var result bytes.Buffer
+
+	encoder := gob.NewEncoder(&result)
+	encoder.Encode(b)
+
+	return result.Bytes()
+}
+
+func DeserializeBlock(d []byte) (*Block, error) {
+	var block Block
+
+	decoder := gob.NewDecoder(bytes.NewReader(d))
+	err := decoder.Decode(&block)
+
+	return &block, err
+}
+
+func (b *Block) Description() string {
+	description := fmt.Sprintf("Prev hash: %x\nData: %s\nHash: %x\n", b.PrevHash, b.Data, b.Hash)
+	return description
 }
 
 // calculateHas SHA256 hashing
-func calculateHash(block Block) string {
-	blockInfo := string(block.Index) + block.Timestamp + block.Data + block.PrevHash
+func calculateHash(block Block) []byte {
+	blockInfo := string(block.Index) + block.Timestamp + block.Data + string(block.PrevHash)
 
 	sha256 := sha256.New()
 	sha256.Write([]byte(blockInfo))
 	hashed := sha256.Sum(nil)
 
-	return hex.EncodeToString(hashed)
-}
-
-// check block is valid
-func isBlockValid(newBlock, oldBlock Block) bool {
-	if oldBlock.Index+1 != newBlock.Index {
-		return false
-	}
-	if oldBlock.Hash != newBlock.PrevHash {
-		return false
-	}
-	if calculateHash(newBlock) != newBlock.Hash {
-		return false
-	}
-	return true
+	return hashed
 }

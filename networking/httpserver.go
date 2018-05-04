@@ -13,7 +13,7 @@ type Message struct {
 	BPM int
 }
 
-func run() error {
+func Run() error {
 	mux := makeMuxRouter()
 	httpAddr := os.Getenv("ADDR")
 	log.Println("Listening on ", os.Getenv("ADDR"))
