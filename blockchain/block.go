@@ -18,6 +18,7 @@ type Block struct {
 	Nonce     int
 }
 
+// NewGenesisBlock generate GenesisBlock
 func NewGenesisBlock() Block {
 	t := time.Now()
 	genesisBlock := Block{0, t.String(), "Genesis Block", []byte{}, []byte{}, 0}
@@ -25,7 +26,7 @@ func NewGenesisBlock() Block {
 	return genesisBlock
 }
 
-// generate new block using previous block's hash
+// NewBlock generate new block using previous block's hash
 func NewBlock(prevBlock *Block, data string) *Block {
 	var newBlock Block
 
@@ -44,6 +45,7 @@ func NewBlock(prevBlock *Block, data string) *Block {
 	return &newBlock
 }
 
+//Serialize to byte save in DB
 func (b *Block) Serialize() []byte {
 	var result bytes.Buffer
 
@@ -53,6 +55,7 @@ func (b *Block) Serialize() []byte {
 	return result.Bytes()
 }
 
+//DeserializeBlock from byte in DB
 func DeserializeBlock(d []byte) (*Block, error) {
 	var block Block
 
@@ -62,6 +65,7 @@ func DeserializeBlock(d []byte) (*Block, error) {
 	return &block, err
 }
 
+//Description string description of block
 func (b *Block) Description() string {
 	description := fmt.Sprintf("Prev hash: %x\nData: %s\nHash: %x\n", b.PrevHash, b.Data, b.Hash)
 	return description

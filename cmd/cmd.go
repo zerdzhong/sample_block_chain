@@ -19,7 +19,7 @@ type CMD struct {
 }
 
 func NewCMD() *CMD {
-	bc := blockchain.NewBlockChain()
+	bc := blockchain.NewBlockchain()
 	cmd := CMD{bc}
 	return &cmd
 }

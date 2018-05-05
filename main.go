@@ -2,10 +2,9 @@ package main
 
 import (
 	"log"
-	. "samplechain/cmd"
+	"samplechain/cmd"
 
 	"github.com/joho/godotenv"
-	"samplechain/networking"
 )
 
 func main() {
@@ -15,10 +14,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cmd := NewCMD()
+	cmd := cmd.NewCMD()
 
 	defer cmd.Close()
 	cmd.Run()
-
-	networking.StartServer()
 }

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	. "samplechain/utils"
+	"samplechain/utils"
 )
 
 //
@@ -16,11 +16,13 @@ var (
 	maxNonce = math.MaxInt64
 )
 
+// ProofOfWork struct define
 type ProofOfWork struct {
 	block  Block
 	target *big.Int
 }
 
+// NewProofOfWork create new proof of work
 func NewProofOfWork(b Block) ProofOfWork {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-targetBits))
@@ -30,21 +32,7 @@ func NewProofOfWork(b Block) ProofOfWork {
 	return pow
 }
 
-func (pow ProofOfWork) prepareData(nonce int) []byte {
-	data := bytes.Join(
-		[][]byte{
-			[]byte(pow.block.PrevHash),
-			[]byte(pow.block.Data),
-			[]byte(pow.block.Timestamp),
-			IntToHex(targetBits),
-			IntToHex(int64(nonce)),
-		},
-		[]byte{},
-	)
-
-	return data
-}
-
+// Run mining hash
 func (pow ProofOfWork) Run() (int, []byte) {
 	var hashInt big.Int
 	var hash [32]byte
@@ -71,6 +59,7 @@ func (pow ProofOfWork) Run() (int, []byte) {
 	return nonce, hash[:]
 }
 
+// Validate is a block by pow
 func (pow ProofOfWork) Validate() bool {
 	var hashInt big.Int
 	data := pow.prepareData(pow.block.Nonce)
@@ -80,4 +69,19 @@ func (pow ProofOfWork) Validate() bool {
 	isValid := hashInt.Cmp(pow.target) == -1
 
 	return isValid
+}
+
+func (pow ProofOfWork) prepareData(nonce int) []byte {
+	data := bytes.Join(
+		[][]byte{
+			[]byte(pow.block.PrevHash),
+			[]byte(pow.block.Data),
+			[]byte(pow.block.Timestamp),
+			utils.IntToHex(targetBits),
+			utils.IntToHex(int64(nonce)),
+		},
+		[]byte{},
+	)
+
+	return data
 }

@@ -11,17 +11,20 @@ const lastDBFileKey = "l"
 
 // Blockchain DB key-value : "lastHash"
 
+// Blockchain contain db and tip
 type Blockchain struct {
 	tip []byte
 	db  *bolt.DB
 }
 
-type BlockchainIterator struct {
+// Iterator iterator of blockchain
+type Iterator struct {
 	currentHash []byte
 	db          *bolt.DB
 }
 
-func NewBlockChain() *Blockchain {
+// NewBlockchain create Blockchain
+func NewBlockchain() *Blockchain {
 
 	var tip []byte
 	db, err := bolt.Open(dbFile, 0600, nil)
@@ -51,6 +54,7 @@ func NewBlockChain() *Blockchain {
 	return &bc
 }
 
+// AddBlock add a block to Blockchain
 func (bc *Blockchain) AddBlock(data string) error {
 
 	var lastBlock *Block
@@ -79,16 +83,19 @@ func (bc *Blockchain) AddBlock(data string) error {
 	return err
 }
 
+// CloseDB close DB
 func (bc *Blockchain) CloseDB() {
 	bc.db.Close()
 }
 
-func (bc *Blockchain) Iterator() *BlockchainIterator {
-	bci := &BlockchainIterator{bc.tip, bc.db}
+// Iterator get blockchain's iterator
+func (bc *Blockchain) Iterator() *Iterator {
+	bci := &Iterator{bc.tip, bc.db}
 	return bci
 }
 
-func (iterator *BlockchainIterator) Next() *Block {
+//Next of iterator
+func (iterator *Iterator) Next() *Block {
 	var block *Block
 
 	err := iterator.db.View(func(tx *bolt.Tx) error {
