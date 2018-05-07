@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"encoding/hex"
 	"fmt"
 	"github.com/boltdb/bolt"
 )
@@ -8,6 +9,8 @@ import (
 const dbFile = "blockchain.db"
 const blocksBucket = "blocks"
 const lastDBFileKey = "l"
+
+const genesisCoinbaseData = "Genesis coinbase data"
 
 // Blockchain DB key-value : "lastHash"
 
@@ -24,7 +27,7 @@ type Iterator struct {
 }
 
 // NewBlockchain create Blockchain
-func NewBlockchain() *Blockchain {
+func NewBlockchain(address string) *Blockchain {
 
 	var tip []byte
 	db, err := bolt.Open(dbFile, 0600, nil)
@@ -33,11 +36,12 @@ func NewBlockchain() *Blockchain {
 		b := tx.Bucket([]byte(blocksBucket))
 
 		if nil == b {
-			b, err = tx.CreateBucket([]byte(blocksBucket))
-			genesisBlock := NewGenesisBlock()
 
+			genesisTransaction := NewCoinbaseTX(address, genesisCoinbaseData)
+			genesisBlock := NewGenesisBlock(genesisTransaction)
 			serializedData := genesisBlock.Serialize()
 
+			b, err = tx.CreateBucket([]byte(blocksBucket))
 			err = b.Put(genesisBlock.Hash, serializedData)
 			err = b.Put([]byte(lastDBFileKey), genesisBlock.Hash)
 
@@ -54,8 +58,8 @@ func NewBlockchain() *Blockchain {
 	return &bc
 }
 
-// AddBlock add a block to Blockchain
-func (bc *Blockchain) AddBlock(data string) error {
+// MineBlock add a block to Blockchain
+func (bc *Blockchain) MineBlock(transactions []*Transaction) error {
 
 	var lastBlock *Block
 
@@ -68,7 +72,7 @@ func (bc *Blockchain) AddBlock(data string) error {
 		return nil
 	})
 
-	newBlock := NewBlock(lastBlock, data)
+	newBlock := NewBlock(lastBlock, transactions)
 
 	bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
@@ -81,6 +85,93 @@ func (bc *Blockchain) AddBlock(data string) error {
 	})
 
 	return err
+}
+
+//FindUnSpentTransactions UTXO 寻找特定地址未被话费的输出（结余？）
+func (bc *Blockchain) FindUnSpentTransactions(address string) []Transaction {
+	var unSpentTXs []Transaction
+	spentTXOutputs := make(map[string][]int)
+
+	bci := bc.Iterator()
+
+	//遍历所有区块
+	for {
+		block := bci.Next()
+		for _, trx := range block.Transactions {
+			trxID := hex.EncodeToString(trx.ID)
+
+		FindOutPuts:
+			for outIdx, out := range trx.Output {
+				//outputs 已经花掉
+				if nil != spentTXOutputs[trxID] {
+					for _, spentOutput := range spentTXOutputs[trxID] {
+						if spentOutput == outIdx {
+							continue FindOutPuts
+						}
+					}
+				}
+
+				//找到转给 address 的 outputs
+				if out.CanBeUnlockedWith(address) {
+					unSpentTXs = append(unSpentTXs, *trx)
+				}
+			}
+
+			if false == trx.IsCoinBase() {
+				for _, input := range trx.Input {
+					if !input.CanUnlockOutputWith(address) {
+						continue
+					}
+					inputTRXID := hex.EncodeToString(input.TXID)
+					spentTXOutputs[inputTRXID] = append(spentTXOutputs[inputTRXID], input.Vout)
+				}
+			}
+		}
+
+		if len(block.PrevHash) == 0 {
+			break
+		}
+	}
+
+	return unSpentTXs
+}
+
+func (bc *Blockchain) FindUTXO(address string) []TXOutput {
+	var UTXOs []TXOutput
+
+	unspentTransaction := bc.FindUnSpentTransactions(address)
+
+	for _, tx := range unspentTransaction {
+		for _, out := range tx.Output {
+			if out.CanBeUnlockedWith(address) {
+				UTXOs = append(UTXOs, out)
+			}
+		}
+	}
+
+	return UTXOs
+}
+
+func (bc *Blockchain) FindSpendableOutputs(address string, amount int) (int, map[string][]int) {
+	unspentOutputs := make(map[string][]int)
+	unspentTXs := bc.FindUnSpentTransactions(address)
+	accumulated := 0
+
+Work:
+	for _, tx := range unspentTXs {
+		txID := hex.EncodeToString(tx.ID)
+		for outIdx, out := range tx.Output {
+			if out.CanBeUnlockedWith(address) && accumulated < amount {
+				accumulated += out.Value
+				unspentOutputs[txID] = append(unspentOutputs[txID], outIdx)
+				if accumulated >= amount {
+					break Work
+				}
+			}
+		}
+	}
+
+	return accumulated, unspentOutputs
 }
 
 // CloseDB close DB

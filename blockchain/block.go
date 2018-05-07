@@ -10,27 +10,27 @@ import (
 
 // Block represent each item in blockchain
 type Block struct {
-	Index     int
-	Timestamp string
-	Data      string
-	Hash      []byte
-	PrevHash  []byte
-	Nonce     int
+	Index        int
+	Timestamp    string
+	Transactions []*Transaction
+	Hash         []byte
+	PrevHash     []byte
+	Nonce        int
 }
 
 // NewGenesisBlock generate GenesisBlock
-func NewGenesisBlock() Block {
+func NewGenesisBlock(coinbase *Transaction) Block {
 	t := time.Now()
-	genesisBlock := Block{0, t.String(), "Genesis Block", []byte{}, []byte{}, 0}
-	genesisBlock.Hash = calculateHash(genesisBlock)
+	genesisBlock := Block{0, t.String(), []*Transaction{coinbase}, []byte{}, []byte{}, 0}
+	genesisBlock.Hash = genesisBlock.HashTransactions()
 	return genesisBlock
 }
 
 // NewBlock generate new block using previous block's hash
-func NewBlock(prevBlock *Block, data string) *Block {
+func NewBlock(prevBlock *Block, transactions []*Transaction) *Block {
 	var newBlock Block
 
-	newBlock.Data = data
+	newBlock.Transactions = transactions
 
 	newBlock.Index = prevBlock.Index + 1
 	newBlock.Timestamp = time.Now().String()
@@ -67,17 +67,17 @@ func DeserializeBlock(d []byte) (*Block, error) {
 
 //Description string description of block
 func (b *Block) Description() string {
-	description := fmt.Sprintf("Prev hash: %x\nData: %s\nHash: %x\n", b.PrevHash, b.Data, b.Hash)
+	description := fmt.Sprintf("Prev hash: %x\nData: %s\nHash: %x\n", b.PrevHash, b.Transactions, b.Hash)
 	return description
 }
+func (b *Block) HashTransactions() []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
 
-// calculateHas SHA256 hashing
-func calculateHash(block Block) []byte {
-	blockInfo := string(block.Index) + block.Timestamp + block.Data + string(block.PrevHash)
+	for _, tx := range b.Transactions {
+		txHashes = append(txHashes, tx.ID)
+	}
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
 
-	sha256 := sha256.New()
-	sha256.Write([]byte(blockInfo))
-	hashed := sha256.Sum(nil)
-
-	return hashed
+	return txHash[:]
 }

@@ -14,8 +14,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	cmd := cmd.NewCMD()
-
-	defer cmd.Close()
+	cmd := cmd.CMD{}
 	cmd.Run()
 }
