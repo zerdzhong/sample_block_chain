@@ -136,7 +136,7 @@ func (cmd *CMD) printChain() {
 		block := bci.Next()
 
 		fmt.Printf(block.Description())
-		pow := blockchain.NewProofOfWork(*block)
+		pow := blockchain.NewProofOfWork(block)
 		fmt.Printf("PoW: %s\n", strconv.FormatBool(pow.Validate()))
 		fmt.Println()
 

@@ -18,12 +18,12 @@ var (
 
 // ProofOfWork struct define
 type ProofOfWork struct {
-	block  Block
+	block  *Block
 	target *big.Int
 }
 
 // NewProofOfWork create new proof of work
-func NewProofOfWork(b Block) ProofOfWork {
+func NewProofOfWork(b *Block) ProofOfWork {
 	target := big.NewInt(1)
 	target.Lsh(target, uint(256-targetBits))
 

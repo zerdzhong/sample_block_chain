@@ -19,22 +19,26 @@ type Block struct {
 }
 
 // NewGenesisBlock generate GenesisBlock
-func NewGenesisBlock(coinbase *Transaction) Block {
-	t := time.Now()
-	genesisBlock := Block{0, t.String(), []*Transaction{coinbase}, []byte{}, []byte{}, 0}
-	genesisBlock.Hash = genesisBlock.HashTransactions()
-	return genesisBlock
+func NewGenesisBlock(coinbase *Transaction) *Block {
+	block := &Block{-1,
+		"",
+		nil,
+		[]byte{},
+		nil,
+		0}
+	return NewBlock(block, []*Transaction{coinbase})
 }
 
 // NewBlock generate new block using previous block's hash
 func NewBlock(prevBlock *Block, transactions []*Transaction) *Block {
-	var newBlock Block
 
-	newBlock.Transactions = transactions
-
-	newBlock.Index = prevBlock.Index + 1
-	newBlock.Timestamp = time.Now().String()
-	newBlock.PrevHash = prevBlock.Hash
+	newBlock := &Block{prevBlock.Index + 1,
+		time.Now().String(),
+		transactions,
+		[]byte{},
+		prevBlock.Hash,
+		0,
+	}
 
 	pow := NewProofOfWork(newBlock)
 	nonce, hash := pow.Run()
@@ -42,7 +46,7 @@ func NewBlock(prevBlock *Block, transactions []*Transaction) *Block {
 	newBlock.Hash = hash
 	newBlock.Nonce = nonce
 
-	return &newBlock
+	return newBlock
 }
 
 //Serialize to byte save in DB
