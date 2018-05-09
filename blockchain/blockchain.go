@@ -11,6 +11,7 @@ const blocksBucket = "blocks"
 const lastDBFileKey = "l"
 
 const genesisCoinbaseData = "Genesis coinbase data"
+const genesisAddress = "zhongzhendong"
 
 // Blockchain DB key-value : "lastHash"
 
@@ -27,7 +28,7 @@ type Iterator struct {
 }
 
 // NewBlockchain create Blockchain
-func NewBlockchain(address string) *Blockchain {
+func NewBlockchain() *Blockchain {
 
 	var tip []byte
 	db, err := bolt.Open(dbFile, 0600, nil)
@@ -36,8 +37,7 @@ func NewBlockchain(address string) *Blockchain {
 		b := tx.Bucket([]byte(blocksBucket))
 
 		if nil == b {
-
-			genesisTransaction := NewCoinbaseTX(address, genesisCoinbaseData)
+			genesisTransaction := NewCoinbaseTX(genesisAddress, genesisCoinbaseData)
 			genesisBlock := NewGenesisBlock(genesisTransaction)
 			serializedData := genesisBlock.Serialize()
 
@@ -185,6 +185,32 @@ func (bc *Blockchain) Iterator() *Iterator {
 	return bci
 }
 
+func (bc *Blockchain) ReplaceChain(newBlockchain []Block) {
+	bc.db.Update(func(tx *bolt.Tx) error {
+
+		tx.DeleteBucket([]byte(blocksBucket))
+
+		var err error
+		maxIndex := 0
+
+		b, err := tx.CreateBucket([]byte(blocksBucket))
+
+		for _, block := range newBlockchain {
+			fmt.Println(block)
+			err = b.Put(block.Hash, block.Serialize())
+
+			if block.Index > maxIndex {
+				err = b.Put([]byte(lastDBFileKey), block.Hash)
+				bc.tip = block.Hash
+				maxIndex = block.Index
+			}
+
+		}
+
+		return err
+	})
+}
+
 //Next of iterator
 func (iterator *Iterator) Next() *Block {
 	var block *Block
@@ -207,7 +233,3 @@ func (iterator *Iterator) Next() *Block {
 
 	return block
 }
-
-//func (bc *Blockchain) GetAllBlocks() []Block {
-//	//return bc.blocks
-//}

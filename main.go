@@ -1,10 +1,11 @@
 package main
 
 import (
-	"log"
-	"samplechain/cmd"
-
 	"github.com/joho/godotenv"
+	"log"
+	"samplechain/blockchain"
+	"samplechain/cmd"
+	"samplechain/http"
 )
 
 func main() {
@@ -14,6 +15,10 @@ func main() {
 		log.Fatal(err)
 	}
 
+	go http.Run()
+
 	cmd := cmd.CMD{}
 	cmd.Run()
+
+	defer blockchain.SampleChain.CloseDB()
 }
